@@ -8,7 +8,74 @@ use App\Models\Products;
 
 class HomeController extends Controller
 {
-    //
+    public function store(Request $request){
+
+        if ($request->check){
+            $columns=[
+                'id',
+                'name',
+                'article',
+                'category',
+                'weight',
+                'price',
+                'status',
+                'created_at'
+            ];
+
+            $query = DB::table('products');
+
+            for($i=0;$i<count($request->check);$i++){
+                if ($request->check[$i] && ($i==0 || $i==4 || $i==5)){
+                    if ($request->select[$i]=='equal')
+                        $query=$query->where($columns[$i],'=',$request->column_val[$i]);
+                    else if ($request->select[$i]=='more')
+                        $query=$query->where($columns[$i],'>=',$request->column_val[$i]);
+                    else
+                        $query=$query->where($columns[$i],'<=',$request->column_val[$i]);
+
+                }
+                else if ($request->check[$i] && ($i==1 || $i==2)){
+                    if ($request->select[$i]=='equal')
+                        $query=$query->where($columns[$i],'=',$request->column_val[$i]);
+                    else
+                        $query=$query->where($columns[$i],'like','%'.$request->column_val[$i].'%');
+                }
+                else if ($request->check[$i] && ($i==7)){
+                    if ($request->select[$i]=='equal')
+                        $query=$query->where($columns[$i],'like','%'.$request->column_val[$i].'%');
+                    else if ($request->select[$i]=='later')
+                        $query=$query->where($columns[$i],'>',$request->column_val[$i]);
+                    else if ($request->select[$i]=='earlier')
+                        $query=$query->where($columns[$i],'<',$request->column_val[$i]);
+
+                }
+                else if($request->check[$i] && $i==6 && $request->stat_check){
+                    $arr=[];
+                    for($j=0;$j<count($request->stat_check);$j++)
+                        if ($request->stat_check[$j])
+                            array_push($arr,$request->statuses[$j]);
+                    $query = $query->whereIn($columns[$i],$arr);
+                }
+                else if($request->check[$i] && $i==3 && $request->cat_check){
+                    $arr=[];
+                    for($j=0;$j<count($request->cat_check);$j++)
+                        if ($request->cat_check[$j])
+                            array_push($arr,$request->categories[$j]);
+                    $query = $query->whereIn($columns[$i],$arr);
+                }
+            }
+            $products = $query->take(10)->get();
+            $categories = DB::table('products')->select('category')->groupBy('category')->get();
+            $statuses = DB::table('products')->select('status')->groupBy('status')->get();
+        return json_encode(['products'=>$products,'statuses'=>$statuses,'categories'=>$categories]);
+        }
+
+        $products = DB::table('products')->take(10)->get();
+        $categories = DB::table('products')->select('category')->groupBy('category')->get();
+        $statuses = DB::table('products')->select('status')->groupBy('status')->get();
+        return json_encode(['products'=>$products,'statuses'=>$statuses,'categories'=>$categories]);
+    }
+
     public function index(Request $request){
 
         if ($request->check){
@@ -23,82 +90,56 @@ class HomeController extends Controller
                 'created_at'
             ];
 
-            $str=" where ";
+            $query = DB::table('products');
 
             for($i=0;$i<count($request->check);$i++){
-                if (intval($request->check[$i])==0 || intval($request->check[$i])==4 || intval($request->check[$i])==5){
-
-                        $str=$str.$columns[intval($request->check[$i])];
-                        if ($request->select[intval($request->check[$i])]=='equal')
-                            $str=$str."= '".$request->column_val[intval($request->check[$i])]."'";
-                        else if ($request->select[intval($request->check[$i])]=='more')
-                            $str=$str.">= '".$request->column_val[intval($request->check[$i])]."'";
-                        else
-                            $str=$str."<= '".$request->column_val[intval($request->check[$i])]."'";
-
-                    }
-                else if (intval($request->check[$i])==1 || intval($request->check[$i])==2){
-
-                        $str=$str.$columns[intval($request->check[$i])];
-                        if ($request->select[intval($request->check[$i])]=='equal')
-                            $str=$str." = '".$request->column_val[intval($request->check[$i])]."'";
-                        else
-                            $str=$str." like '%".$request->column_val[intval($request->check[$i])]."%'";
-
-                    }
-                else if(intval($request->check[$i])==7){
-
-                    $str=$str.$columns[intval($request->check[$i])];
-                    if ($request->select[intval($request->check[$i])]=='equal')
-                        $str=$str." like '%".$request->column_val[intval($request->check[$i])]."%'";
-                    else if ($request->select[intval($request->check[$i])]=='later')
-                        $str=$str." > '".$request->column_val[intval($request->check[$i])]."'";
-                    else if ($request->select[intval($request->check[$i])]=='earlier')
-                        $str=$str." < '".$request->column_val[intval($request->check[$i])]."'";
+                if ($request->check[$i] && ($i==0 || $i==4 || $i==5)){
+                    if ($request->select[$i]=='equal')
+                        $query=$query->where($columns[$i],'=',$request->column_val[$i]);
+                    else if ($request->select[$i]=='more')
+                        $query=$query->where($columns[$i],'>=',$request->column_val[$i]);
+                    else
+                        $query=$query->where($columns[$i],'<=',$request->column_val[$i]);
 
                 }
-                else if(intval($request->check[$i])==6 && $request->statuses){
-
-                    $str=$str."(";
-                    for($j=0;$j<count($request->statuses);$j++){
-                        $str=$str." status = '".$request->statuses[$j]."'";
-                        if ($j!=count($request->statuses)-1){
-                            $str=$str." or ";
-                        }
-                    }
-                    $str=$str." )";
+                else if ($request->check[$i] && ($i==1 || $i==2)){
+                    if ($request->select[$i]=='equal')
+                        $query=$query->where($columns[$i],'=',$request->column_val[$i]);
+                    else
+                        $query=$query->where($columns[$i],'like','%'.$request->column_val[$i].'%');
+                }
+                else if ($request->check[$i] && ($i==7)){
+                    if ($request->select[$i]=='equal')
+                        $query=$query->where($columns[$i],'like','%'.$request->column_val[$i].'%');
+                    else if ($request->select[$i]=='later')
+                        $query=$query->where($columns[$i],'>',$request->column_val[$i]);
+                    else if ($request->select[$i]=='earlier')
+                        $query=$query->where($columns[$i],'<',$request->column_val[$i]);
 
                 }
-                else if(intval($request->check[$i])==3 && $request->categories){
-
-                    $str=$str."(";
-                    for($j=0;$j<count($request->categories);$j++){
-                        $str=$str." category = '".$request->categories[$j]."'";
-                        if ($j!=count($request->categories)-1){
-                            $str=$str." or ";
-                        }
-                    }
-                    $str=$str." )";
-
+                else if($request->check[$i] && $i==6 && $request->stat_check){
+                    $arr=[];
+                    for($j=0;$j<count($request->stat_check);$j++)
+                        if ($request->stat_check[$j])
+                            array_push($arr,$request->statuses[$j]);
+                    $query = $query->whereIn($columns[$i],$arr);
                 }
-                if ($i!=count($request->check)-1){
-                    $str=$str." and ";
+                else if($request->check[$i] && $i==3 && $request->cat_check){
+                    $arr=[];
+                    for($j=0;$j<count($request->cat_check);$j++)
+                        if ($request->cat_check[$j])
+                            array_push($arr,$request->categories[$j]);
+                    $query = $query->whereIn($columns[$i],$arr);
                 }
-                // print($str."<br>");
             }
-            if ($str==" where ")
-            $products = Products::all()->take(10);
-            else
-            $products = DB::select('select * from products'.$str." limit 10", []);
-
-            $categories = DB::select('select category from products group by category', []);
-            $statuses = DB::select('select status from products group by status', []);
-            return view('welcome',['products'=>$products,'statuses'=>$statuses,'categories'=>$categories]);
+            $products = $query->take(10)->get();
+            $categories = DB::table('products')->select('category')->groupBy('category')->get();
+            $statuses = DB::table('products')->select('status')->groupBy('status')->get();
+        return json_encode(['products'=>$products,'statuses'=>$statuses,'categories'=>$categories]);
         }
-
-        $categories = DB::select('select category from products group by category', []);
-        $statuses = DB::select('select status from products group by status', []);
-        $products = Products::all()->take(10);
-        return view('welcome',['products'=>$products,'statuses'=>$statuses,'categories'=>$categories]);
+        $products = DB::table('products')->take(10)->get();
+        $categories = DB::table('products')->select('category')->groupBy('category')->get();
+        $statuses = DB::table('products')->select('status')->groupBy('status')->get();
+        return json_encode(['products'=>$products,'statuses'=>$statuses,'categories'=>$categories]);
     }
 }
