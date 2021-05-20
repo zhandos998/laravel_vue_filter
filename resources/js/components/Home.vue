@@ -12,7 +12,7 @@
                             </button>
                         </div>
                         <div class="modal-body">
-                            <form action="/" method="POST" @submit.prevent="PostMethod">
+                            <form action="/" method="POST" @submit.prevent="postResults({page})">
                                 <div class="modaldiv row">
                                     <input class="colcheck" type="checkbox" name="check[]" v-model="check[0]" value="0">
                                     <label class="col-sm-2 col-form-label colname">ID</label>
@@ -29,7 +29,7 @@
                                     <select class="col-sm-2 form-control colequal" name="select[]" v-model="select[1]">
                                         <option value="equal" >equal</option>
                                         <option value="more">like</option>
-                                        </select>
+                                    </select>
                                     <input class="form-control" name="column_val[]" v-model="column_val[1]">
                                 </div>
                                 <div class="modaldiv row">
@@ -38,7 +38,7 @@
                                     <select class="col-sm-2 form-control colequal" name="select[]" v-model="select[2]">
                                         <option value="equal" >equal</option>
                                         <option value="more">like</option>
-                                        </select>
+                                    </select>
                                     <input class="form-control" name="column_val[]" v-model="column_val[2]">
                                 </div>
                                 <div class="modaldiv row">
@@ -64,7 +64,7 @@
                                         <option value="equal" >equal</option>
                                         <option value="more">more</option>
                                         <option value="less">less</option>
-                                        </select>
+                                    </select>
                                     <input class="form-control" name="column_val[]" v-model="column_val[4]">
                                 </div>
                                 <div class="modaldiv row">
@@ -74,7 +74,7 @@
                                         <option value="equal" >equal</option>
                                         <option value="more">more</option>
                                         <option value="less">less</option>
-                                        </select>
+                                    </select>
                                     <input class="form-control" name="column_val[]" v-model="column_val[5]">
                                 </div>
                                 <div class="modaldiv row">
@@ -100,8 +100,14 @@
                                         <option value="equal" >equal</option>
                                         <option value="later">later</option>
                                         <option value="earlier">earlier</option>
+                                        <option value="between">between</option>
                                     </select>
-                                    <input class="form-control" name="column_val[]" v-model="column_val[7]">
+                                    <div v-if="select[7] == 'equal' || select[7] == 'later' || select[7] == 'earlier'">
+                                        <date-picker class="form-control-calendar" name="column_val[]" v-model="column_val[7]" valueType="format"></date-picker>
+                                    </div>
+                                    <div v-else>
+                                        <date-picker class="form-control-calendar" name="column_val[]" v-model="column_val[7]" range></date-picker>
+                                    </div>
                                 </div>
                                 <div class="modal-footer">
                                     <button class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
@@ -140,50 +146,40 @@
                 </tr>
             </tbody>
         </table>
+
+        <pagination :data="laravelData" @pagination-change-page="postResults"></pagination>
+        {{prev}}
     </div>
 </template>
 
 <script>
 import axios from 'axios';
+import DatePicker from 'vue2-datepicker';
+import 'vue2-datepicker/index.css';
 
     export default {
+        components: { DatePicker },
         data:function(){
             return {
-                    products:[],
-                    statuses:[],
-                    categories:[],
-                    check:[],
-                    select:[],
-                    stat_check:[],
-                    cat_check:[],
-                    column_val:[]
+                    laravelData: {},
+                    products: [],
+                    statuses: [],
+                    categories: [],
+                    check: [],
+                    select: [],
+                    stat_check: [],
+                    cat_check: [],
+                    column_val: [],
+                    page:1
                 }
         },
         mounted() {
-            var app = this;
-            axios.get('/api')
-                .then(function (resp) {
-                    app.products = resp.data.products;
-                    app.statuses = resp.data.statuses;
-                    app.categories = resp.data.categories;
-                    for(var i=0;i<app.products.length;i++){
-                            app.check.push(false);
-                            app.select.push('equal');
-                        }
-                    for(var i=0;i<app.statuses.length;i++)
-                        app.stat_check.push(false);
-                    for(var i=0;i<app.categories.length;i++)
-                        app.cat_check.push(false);
-                })
-                .catch(function (resp) {
-                    console.log(resp);
-                    alert("Error this get");
-                });
+            this.getResults();
         },
         methods:{
-            PostMethod(){
+            postResults(page = 1){
                 var app = this;
-                axios.post('/api',{
+                axios.post('/api?page=' + page,{
                     select: this.select,
                     stat_check: this.stat_check,
                     cat_check: this.cat_check,
@@ -193,13 +189,39 @@ import axios from 'axios';
                     categories: this.categories
                 })
                 .then(function (resp) {
-                    app.products = resp.data.products;
+                    app.laravelData = resp.data.products;
+                    app.products = resp.data.products.data;
                     app.statuses = resp.data.statuses;
                     app.categories = resp.data.categories;
+                    app.page=page;
                 })
                 .catch(function (error) {
                     console.log(error);
+                    alert("Error this Post");
                 });
+            },
+            getResults(page = 1) {
+                var app = this;
+                axios.get('/api?page=' + page)
+                    .then(function (resp) {
+                        app.laravelData = resp.data.products;
+                        app.products = resp.data.products.data;
+                        app.statuses = resp.data.statuses;
+                        app.categories = resp.data.categories;
+                        app.page=page;
+                        for(var i=0;i<app.products.length;i++){
+                                app.check.push(false);
+                                app.select.push('equal');
+                            }
+                        for(var i = 0; i < app.statuses.length; i++)
+                            app.stat_check.push(false);
+                        for(var i = 0; i < app.categories.length; i++)
+                            app.cat_check.push(false);
+                    })
+                    .catch(function (resp) {
+                        console.log(resp);
+                        alert("Error this get");
+                    });
             }
         }
     }

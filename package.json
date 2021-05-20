@@ -10,6 +10,7 @@
         "production": "mix --production"
     },
     "devDependencies": {
+        "@types/vue2-datepicker": "^3.3.0",
         "axios": "^0.21",
         "bootstrap": "^4.6.0",
         "jquery": "^3.6",
@@ -25,6 +26,8 @@
         "vue-template-compiler": "^2.6.12"
     },
     "dependencies": {
-        "vue-router": "^3.5.1"
+        "laravel-vue-pagination": "^2.3.1",
+        "vue-router": "^3.5.1",
+        "vue2-datepicker": "^3.9.0"
     }
 }

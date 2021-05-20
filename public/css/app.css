@@ -10403,7 +10403,12 @@ a:hover {
 
 .form-control {
   display: inline;
-  width: auto;
+  width: 230px;
+  margin: 0px 10px;
+}
+
+.form-control-calendar {
+  width: 230px !important;
   margin: 0px 10px;
 }
 
@@ -10422,7 +10427,7 @@ a:hover {
   color: #495057;
   background-color: #fff;
   border: 1px solid #ced4da;
-  width: 100%;
+  width: 230px;
 }
 .dropdown-toggle:hover {
   color: #495057;
